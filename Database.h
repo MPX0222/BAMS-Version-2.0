@@ -70,7 +70,6 @@ int DT_Login(char* username, char* password)
 
 int DT_Table_Func(char* db_url)
 {
-	system("cls");
 	int flag = 0, func = 0, count = 0;
 	char db_name[13] = { 0 }, SID[10], haven[16], file_haven[45]; char* p;
 	char setting[45];
@@ -194,16 +193,14 @@ int DT_Database_Delete(TCHAR* db_name)
 	fclose(fp);
 
 	if (!(remove(db_url)))
-	{
 		return 1;
-	}
-	else	
+	else
 		return -1;
 }
 
 int DT_Database_Open(TCHAR* db_name)
 {
-	char db_name[10] = { 0 }, db_url[18];
+	char db_url[18];
 	errno_t err;
 
 	_tcscpy_s(db_url, _tcslen(db_name) + 1, db_name);
@@ -213,7 +210,7 @@ int DT_Database_Open(TCHAR* db_name)
 	if ((err = fopen_s(&fp, db_url, "r")) == 0)  //判断数据库是否存在
 	{
 		fclose(fp);
-		return 0;
+		return 1;
 	}
 	else
 		return -1;

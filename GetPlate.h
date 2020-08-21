@@ -1,6 +1,5 @@
 #pragma once
 
-// code by C
 
 /**
  * Code by C
