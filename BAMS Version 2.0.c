@@ -22,22 +22,32 @@ static int SHOWWINDOW_LENTH = 1500;        //  标准显示窗口长度
 
 int FLAG = 0;
 
+TCHAR DB_NAME[10];                              //  传入下一个函数的参数
+
+FILE* fp1;      //库文件
+FILE* fp2;      //程序注册表文件
+FILE* fp3;      //程序注册表替换文件
+
 LRESULT CALLBACK Login_UI(HWND, UINT, WPARAM, LPARAM);				/*1.登录窗口*/
 LRESULT CALLBACK Database_Menu_UI(HWND, UINT, WPARAM, LPARAM);		/*2.数据库操作界面窗口*/
-LRESULT CALLBACK Database_InputIDC_UI(HWND, UINT, WPARAM, LPARAM);	/*3.数据库信息输入窗口1*/
-LRESULT CALLBACK Database_InputIDD_UI(HWND, UINT, WPARAM, LPARAM);	/*3.数据库信息输入窗口2*/
-LRESULT CALLBACK Database_InputIDO_UI(HWND, UINT, WPARAM, LPARAM);	/*3.数据库信息输入窗口3*/
+LRESULT CALLBACK Database_InputIDC_UI(HWND, UINT, WPARAM, LPARAM);	/*3.1数据库创建信息输入窗口1*/
+LRESULT CALLBACK Database_InputIDD_UI(HWND, UINT, WPARAM, LPARAM);	/*3.2数据库删除信息输入窗口2*/
+LRESULT CALLBACK Database_InputIDO_UI(HWND, UINT, WPARAM, LPARAM);	/*3.3数据库调用信息输入窗口3*/
 LRESULT CALLBACK Table_Menu_UI(HWND, UINT, WPARAM, LPARAM);			/*4.数据表操作界面窗口*/
-LRESULT CALLBACK Table_InputID_UI(HWND, UINT, WPARAM, LPARAM);		/*5.数据表信息输入窗口*/
+LRESULT CALLBACK Table_InputIDC_UI(HWND, UINT, WPARAM, LPARAM);		/*5.1数据表创建信息输入窗口*/
+LRESULT CALLBACK Table_InputIDD_UI(HWND, UINT, WPARAM, LPARAM);		/*5.2数据表删除信息输入窗口*/
+LRESULT CALLBACK Table_InputIDO_UI(HWND, UINT, WPARAM, LPARAM);		/*5.3数据表调用信息输入窗口*/
 LRESULT CALLBACK CodeData_Show_UI(HWND, UINT, WPARAM, LPARAM);		/*6.数据查询显示窗口*/
 
 static TCHAR LOGIN_CLASS[] = TEXT("LOGIN");                             /*窗口类：登录*/
 static TCHAR DATABASE_MENU_CLASS[] = TEXT("DATABASE_MENU");             /*窗口类：数据库操作界面*/
-static TCHAR DATABASE_INPUTID_CLASS1[] = TEXT("DATABASE_INPUTIDC");       /*窗口类：数据库信息输入*/
-static TCHAR DATABASE_INPUTID_CLASS2[] = TEXT("DATABASE_INPUTIDD");       /*窗口类：数据库信息输入*/
-static TCHAR DATABASE_INPUTID_CLASS3[] = TEXT("DATABASE_INPUTIDO");       /*窗口类：数据库信息输入*/
+static TCHAR DATABASE_INPUTID_CLASS1[] = TEXT("DATABASE_INPUTIDC");       /*窗口类：数据库创建信息输入*/
+static TCHAR DATABASE_INPUTID_CLASS2[] = TEXT("DATABASE_INPUTIDD");       /*窗口类：数据库删除信息输入*/
+static TCHAR DATABASE_INPUTID_CLASS3[] = TEXT("DATABASE_INPUTIDO");       /*窗口类：数据库调用信息输入*/
 static TCHAR TABLE_MENU_CLASS[] = TEXT("TABLE_MENU");                   /*窗口类：数据表操作界面*/
-static TCHAR TABLE_INPUTID_CLASS[] = TEXT("TABLE_INPUTID");             /*窗口类：数据表信息输入*/
+static TCHAR TABLE_INPUTID_CLASS1[] = TEXT("TABLE_INPUTIDC");             /*窗口类：数据表创建信息输入*/
+static TCHAR TABLE_INPUTID_CLASS2[] = TEXT("TABLE_INPUTIDD");             /*窗口类：数据表删除信息输入*/
+static TCHAR TABLE_INPUTID_CLASS3[] = TEXT("TABLE_INPUTIDO");             /*窗口类：数据表调用信息输入*/
 static TCHAR CODEDATA_SHOW_CLASS[] = TEXT("CODEDATA_SHOW");             /*窗口类：数据查询显示*/
 
 static TCHAR LOGIN_TITLE[] = TEXT("BAMS Version 2.0 登录");
@@ -47,7 +57,7 @@ static TCHAR TABLE_MENU_TITLE[] = TEXT("BAMS Version 2.0 数据表菜单");
 static TCHAR TABLE_INPUTID_TITLE[] = TEXT("BAMS Version 2.0 数据表信息输入");
 static TCHAR CODEDATA_SHOW_TITLE[] = TEXT("BAMS Version 2.0 数据显示 ");
 
-HWND login, db_menu, db_input_C, db_input_D, db_input_O, tb_menu, tb_input, code_show;
+HWND login, db_menu, db_input_C, db_input_D, db_input_O, tb_menu, tb_input_C, tb_input_D, tb_input_O, code_show;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, PSTR szCmdLine, int iCmdShow)
@@ -119,9 +129,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, PSTR szCmdLine,
         MessageBox(NULL, TEXT("数据表菜单界面注册失败！"), TEXT("错误"), MB_OK | MB_ICONERROR);
         return 0;
     }
-/*
-    wndclass.lpszClassName = TABLE_INPUTID_CLASS;       //  创建 数据表信息输入 界面窗口对象
-    wndclass.lpfnWndProc = Table_InputID_UI;            //  设置 数据表信息输入 界面窗口回调函数
+
+    wndclass.lpszClassName = TABLE_INPUTID_CLASS1;       //  创建 数据表信息输入 界面窗口对象
+    wndclass.lpfnWndProc = Table_InputIDC_UI;            //  设置 数据表信息输入 界面窗口回调函数
+
+    if (!RegisterClass(&wndclass))
+    {
+        MessageBox(NULL, TEXT("数据表信息输入界面注册失败！"), TEXT("错误"), MB_OK | MB_ICONERROR);
+        return 0;
+    }
+
+    wndclass.lpszClassName = TABLE_INPUTID_CLASS2;       //  创建 数据表信息输入 界面窗口对象
+    wndclass.lpfnWndProc = Table_InputIDD_UI;            //  设置 数据表信息输入 界面窗口回调函数
+
+    if (!RegisterClass(&wndclass))
+    {
+        MessageBox(NULL, TEXT("数据表信息输入界面注册失败！"), TEXT("错误"), MB_OK | MB_ICONERROR);
+        return 0;
+    }
+
+    wndclass.lpszClassName = TABLE_INPUTID_CLASS3;       //  创建 数据表信息输入 界面窗口对象
+    wndclass.lpfnWndProc = Table_InputIDO_UI;            //  设置 数据表信息输入 界面窗口回调函数
 
     if (!RegisterClass(&wndclass))
     {
@@ -204,25 +232,49 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, PSTR szCmdLine,
         TABLE_MENU_CLASS,
         TABLE_MENU_TITLE,
         WS_OVERLAPPEDWINDOW,
-        500, 500,                                       //  窗口初始显示坐标：（500 , 500）
+        350, 190,                                       //  窗口初始显示坐标：（500 , 500）
         MENUWINDOW_LENTH, MENUWINDOW_WIDTH,               //  窗口初始显示大小： 1200 × 1200
         NULL, NULL,
         hInstance,
         NULL);
     ShowWindow(tb_menu, SW_HIDE);
     UpdateWindow(tb_menu);
-/*
-    tb_input = CreateWindow(
-        TABLE_INPUTID_CLASS,
+
+    tb_input_C = CreateWindow(
+        TABLE_INPUTID_CLASS1,
         TABLE_INPUTID_TITLE,
         WS_OVERLAPPEDWINDOW,
-        500, 500,                                       //窗口初始显示坐标：（500 , 500）
-        INPUTWINDOW_LENTH, INPUTWINDOW_WIDTH,             //窗口初始显示大小： 500 × 500
+        520, 260,                                       //  窗口初始显示坐标：（500 , 500）
+        INPUTWINDOW_LENTH, INPUTWINDOW_WIDTH,             //  窗口初始显示大小： 500 × 500
         NULL, NULL,
         hInstance,
         NULL);
-    ShowWindow(tb_input, SW_HIDE);
-    UpdateWindow(tb_input);
+    ShowWindow(tb_input_C, SW_HIDE);
+    UpdateWindow(tb_input_C);
+
+    tb_input_D = CreateWindow(
+        TABLE_INPUTID_CLASS2,
+        TABLE_INPUTID_TITLE,
+        WS_OVERLAPPEDWINDOW,
+        520, 260,                                       //  窗口初始显示坐标：（500 , 500）
+        INPUTWINDOW_LENTH, INPUTWINDOW_WIDTH,             //  窗口初始显示大小： 500 × 500
+        NULL, NULL,
+        hInstance,
+        NULL);
+    ShowWindow(tb_input_D, SW_HIDE);
+    UpdateWindow(tb_input_D);
+
+    tb_input_O = CreateWindow(
+        TABLE_INPUTID_CLASS3,
+        TABLE_INPUTID_TITLE,
+        WS_OVERLAPPEDWINDOW,
+        520, 260,                                       //  窗口初始显示坐标：（500 , 500）
+        INPUTWINDOW_LENTH, INPUTWINDOW_WIDTH,             //  窗口初始显示大小： 500 × 500
+        NULL, NULL,
+        hInstance,
+        NULL);
+    ShowWindow(tb_input_O, SW_HIDE);
+    UpdateWindow(tb_input_O);
 /*
     code_show = CreateWindow(
         CODEDATA_SHOW_CLASS,
@@ -783,10 +835,10 @@ LRESULT CALLBACK Database_InputIDO_UI(HWND db_input_O, UINT message, WPARAM wPar
 
         if ((HWND)lParam == CONF)
         {
-            GetWindowText(INPUT1, DBNAME, 10);
-            if (DT_Database_Open(DBNAME) == 1)
+            GetWindowText(INPUT1, DB_NAME, 10);
+            if (DT_Database_Open(DB_NAME) == 1)
             {
-                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 调用成功！"), DBNAME);
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 调用成功！"), DB_NAME);
                 MessageBox(db_input_O, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
 
                 //  关闭此前的界面
@@ -798,9 +850,9 @@ LRESULT CALLBACK Database_InputIDO_UI(HWND db_input_O, UINT message, WPARAM wPar
                 ShowWindow(tb_menu, SW_SHOW);                   //  打开数据表菜单界面
                 UpdateWindow(tb_menu);
             }
-            if (DT_Database_Open(DBNAME) == -1)
+            if (DT_Database_Open(DB_NAME) == -1)
             {
-                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 错误或不存在！"), DBNAME);
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 错误或不存在！"), DB_NAME);
                 MessageBox(db_input_O, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
 
                 ShowWindow(db_input_O, SW_HIDE);
@@ -833,7 +885,149 @@ LRESULT CALLBACK Table_Menu_UI(HWND tb_menu, UINT message, WPARAM wParam, LPARAM
     HDC hdc;
     RECT rect = { 30, 30, 300, 390 }, rect1;
 
-    static HWND CREATE_DB, DELETE_DB, OPEN_DB, EXIT, TEXT1;
+    static HWND CREATE_TB, DELETE_TB, OPEN_TB, EXIT, TEXT1;
+    static HFONT hFont;                                             //  定义：逻辑字体
+    int count = 0;
+    char SID[10], haven[16], file_haven[45], setting[45], DB_URL[16];
+    errno_t err, err1;
+    BTree T;
+
+    _tcscpy_s(DB_URL, _tcslen(DB_NAME) + 1, DB_NAME);
+    strcat_s(DB_URL, strlen(DB_URL) + strlen("代码库") + 1, "代码库");
+
+    switch (message)
+    {
+
+    case WM_CREATE:
+
+        hFont = CreateFont(-14/*高*/, -7/*宽*/, 0, 0, 400 /*一般这个值设为400*/,
+            FALSE/*斜体?*/, FALSE/*下划线?*/, FALSE/*删除线?*/, DEFAULT_CHARSET,
+            OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY,
+            FF_DONTCARE, TEXT("微软雅黑"));
+
+        //创建按钮控件--创建数据库
+        CREATE_TB = CreateWindow(TEXT("BUTTON"), TEXT("创建代码数据文件 Create CodeFile"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            430 /*x坐标*/, 80 /*y坐标*/, 300 /*宽度*/, 45 /*高度*/,
+            tb_menu /*父窗口句柄*/, (HMENU)1 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        );
+        //创建按钮控件--删除数据库
+        DELETE_TB = CreateWindow(TEXT("BUTTON"), TEXT("删除代码数据文件 Delete CodeFile"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            430, 165, 300, 45,
+            tb_menu, (HMENU)2, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+        //创建按钮控件--调用数据库
+        OPEN_TB = CreateWindow(TEXT("BUTTON"), TEXT("查看代码数据文件 Select CodeFile"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            430, 250, 300, 45,
+            tb_menu, (HMENU)3, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+        //创建按钮控件--退出程序
+        EXIT = CreateWindow(TEXT("BUTTON"), TEXT("退出程序 Exit"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            430, 335, 300, 45,
+            tb_menu, (HMENU)4, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //依次设置控件的字体
+        SendMessage(CREATE_TB, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(DELETE_TB, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(OPEN_TB, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(EXIT, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(TEXT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        //break;
+
+    case WM_PAINT:
+
+        hdc = BeginPaint(tb_menu, &ps);
+        SelectObject(hdc, hFont);           //  设置显示字体
+        GetClientRect(tb_menu, &rect1);
+        DrawText(hdc, TEXT("BAMS 代码管理系统 Version 2.0"), -1, &rect1, DT_LEFT | DT_CENTER);        //  绘制界面标题
+        //TextOut(hdc, 360, 30, DB_URL, strlen(DB_URL));
+
+        EndPaint(tb_menu, &ps);
+        return 0;
+
+    case WM_COMMAND:
+
+        BTree_CreateTree(&T, 3);
+
+        strcat_s(DB_URL, strlen(DB_URL) + strlen(".txt") + 1, ".txt");
+        err = fopen_s(&fp, DB_URL, "r");
+        fseek(fp, 0L, SEEK_SET);
+
+        while (fgets(haven, 16, fp) != NULL)  //读取数据库文件中的文件名，在内存中生成B树
+        {
+            _tcscpy_s(SID, _tcslen(haven) + 1, haven);  //分离尾缀
+            int key = atoi(SID);
+            BTree_Insert(&T, key);
+        }
+        fclose(fp);
+
+
+        //独立注册表设置
+        _tcscpy_s(setting, _tcslen(DB_NAME) + 1, DB_NAME);
+        strcat_s(setting, strlen(setting) + strlen("代码库") + 1, "代码库");
+        strcat_s(setting, strlen(setting) + strlen("程序注册表.txt") + 1, "程序注册表.txt");
+
+        if ((err = fopen_s(&fp2, setting, "r")) == 0) {
+            while (fgets(file_haven, 45, fp2) != NULL) {
+                count++;
+            }
+            fclose(fp2);
+        }
+        
+        if ((HWND)lParam == CREATE_TB)
+        {
+            ShowWindow(tb_input_C, SW_SHOW);
+            UpdateWindow(tb_input_C);
+        }
+        if ((HWND)lParam == DELETE_TB)
+        {
+            ShowWindow(tb_input_D, SW_SHOW);
+            UpdateWindow(tb_input_D);
+        }		
+
+        if ((HWND)lParam == OPEN_TB)
+        {
+            ShowWindow(tb_input_O, SW_SHOW);
+            UpdateWindow(tb_input_O);
+        }
+
+        err1 = fopen_s(&fp3, "db_temp.txt", "w");  //更新数据库文件内容
+        BTree_Traverse(&T, T.root, 0);
+        remove(DB_URL);
+        fclose(fp3);
+        rename("db_temp.txt", DB_URL);
+
+        if ((HWND)lParam == EXIT)
+        {
+            DestroyWindow(tb_menu);
+        }
+
+        return 0;
+
+    case WM_DESTROY:
+
+        DeleteObject(hFont);
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    return DefWindowProc(db_menu, message, wParam, lParam);
+}
+
+
+LRESULT CALLBACK Table_InputIDC_UI(HWND tb_input_C, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    PAINTSTRUCT ps;
+    HDC hdc;
+    RECT rect, rect1 = { 100, 140, 100, 26 };
+    TCHAR DBNAME[10], PROMPT[100];
+
+    int flag = 0;
+    static HWND CONF, INPUT1, TEXT1, TEXT2, BACK;
     static HFONT hFont;                                             //  定义：逻辑字体
 
 
@@ -847,69 +1041,83 @@ LRESULT CALLBACK Table_Menu_UI(HWND tb_menu, UINT message, WPARAM wParam, LPARAM
             OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY,
             FF_DONTCARE, TEXT("微软雅黑"));
 
-        //创建按钮控件--创建数据库
-        CREATE_DB = CreateWindow(TEXT("BUTTON"), TEXT("创建代码数据库 Create Database"),
-            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
-            430 /*x坐标*/, 80 /*y坐标*/, 300 /*宽度*/, 45 /*高度*/,
-            tb_menu /*父窗口句柄*/, (HMENU)1 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        //创建静态文本框控件--库名
+        TEXT1 = CreateWindow(TEXT("static"), TEXT("库 名："),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ | SS_RIGHT /*水平居右*/,
+            10 /*x坐标*/, 80 /*y坐标*/, 70 /*宽度*/, 26 /*高度*/,
+            tb_input_C /*父窗口句柄*/, (HMENU)1 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
         );
-        //创建按钮控件--删除数据库
-        DELETE_DB = CreateWindow(TEXT("BUTTON"), TEXT("删除代码数据库 Delete Database"),
-            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
-            430, 165, 300, 45,
-            tb_menu, (HMENU)2, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+
+        TEXT2 = CreateWindow(TEXT("static"), TEXT("名称字数限制：10"),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ /*水平居右*/,
+            100 /*x坐标*/, 140 /*y坐标*/, 120 /*宽度*/, 26 /*高度*/,
+            tb_input_C /*父窗口句柄*/, (HMENU)5 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
         );
-        //创建按钮控件--调用数据库
-        OPEN_DB = CreateWindow(TEXT("BUTTON"), TEXT("调用代码数据库 Open Database"),
-            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
-            430, 250, 300, 45,
-            tb_menu, (HMENU)3, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+
+        //创建单行文本框控件
+        INPUT1 = CreateWindow(TEXT("edit"), TEXT(""),
+            WS_CHILD | WS_VISIBLE | WS_BORDER /*边框*/ | ES_AUTOHSCROLL /*水平滚动*/,
+            100, 80, 200, 26,
+            tb_input_C, (HMENU)2, ((LPCREATESTRUCT)lParam)->hInstance, NULL
         );
-        //创建按钮控件--退出程序
-        EXIT = CreateWindow(TEXT("BUTTON"), TEXT("退出程序 Exit"),
+
+        //创建按钮控件--确定
+        CONF = CreateWindow(TEXT("button"), TEXT("确定"),
             WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
-            430, 335, 300, 45,
-            tb_menu, (HMENU)4, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+            350, 80, 100, 30,
+            tb_input_C, (HMENU)3, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //创建按钮控件--返回上一级
+        BACK = CreateWindow(TEXT("button"), TEXT("返回上一级"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            350, 140, 100, 30,
+            tb_input_C, (HMENU)4, ((LPCREATESTRUCT)lParam)->hInstance, NULL
         );
 
         //依次设置控件的字体
-        SendMessage(CREATE_DB, WM_SETFONT, (WPARAM)hFont, NULL);
-        SendMessage(DELETE_DB, WM_SETFONT, (WPARAM)hFont, NULL);
-        SendMessage(OPEN_DB, WM_SETFONT, (WPARAM)hFont, NULL);
-        SendMessage(EXIT, WM_SETFONT, (WPARAM)hFont, NULL);
         SendMessage(TEXT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(TEXT2, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(INPUT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(BACK, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(CONF, WM_SETFONT, (WPARAM)hFont, NULL);
         //break;
 
     case WM_PAINT:
 
-        hdc = BeginPaint(tb_menu, &ps);
-        SelectObject(hdc, hFont);           //  设置显示字体
-        GetClientRect(tb_menu, &rect1);
-        DrawText(hdc, TEXT("BAMS 代码管理系统 Version 2.0  数据库"), -1, &rect1, DT_LEFT | DT_CENTER);        //  绘制界面标题
+        hdc = BeginPaint(tb_input_C, &ps);
+        SelectObject(hdc, hFont);               //  设置显示字体
+        GetClientRect(tb_input_C, &rect);
+        DrawText(hdc, TEXT("BAMS 代码管理系统 Version 2.0  数据库创建\n\n[请输入数据库名称]"), -1, &rect, DT_LEFT | DT_CENTER);        //  绘制登录界面标题
 
-        EndPaint(tb_menu, &ps);
+        EndPaint(tb_input_C, &ps);
         return 0;
 
     case WM_COMMAND:
 
-        if ((HWND)lParam == CREATE_DB)
+        if ((HWND)lParam == CONF)
         {
-            ShowWindow(db_input_C, SW_SHOW);
-            UpdateWindow(db_input_C);
+            GetWindowText(INPUT1, DBNAME, 10);
+            if (DT_Database_Create(DBNAME) == 1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 创建成功！"), DBNAME);
+                MessageBox(tb_input_C, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+                ShowWindow(tb_input_C, SW_HIDE);
+                UpdateWindow(tb_input_C);
+            }
+            else if (DT_Database_Create(DBNAME) == -1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 已经存在！"), DBNAME);
+                MessageBox(tb_input_C, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+                ShowWindow(tb_input_C, SW_HIDE);
+                UpdateWindow(tb_input_C);
+            }
         }
-        if ((HWND)lParam == DELETE_DB)
+
+        if ((HWND)lParam == BACK)
         {
-            ShowWindow(db_input_D, SW_SHOW);
-            UpdateWindow(db_input_D);
-        }
-        if ((HWND)lParam == OPEN_DB)
-        {
-            ShowWindow(db_input_O, SW_SHOW);
-            UpdateWindow(db_input_O);
-        }
-        if ((HWND)lParam == EXIT)
-        {
-            DestroyWindow(db_menu);
+            ShowWindow(tb_input_C, SW_HIDE);
+            UpdateWindow(tb_input_C);
         }
 
         return 0;
@@ -921,5 +1129,241 @@ LRESULT CALLBACK Table_Menu_UI(HWND tb_menu, UINT message, WPARAM wParam, LPARAM
         return 0;
     }
 
-    return DefWindowProc(db_menu, message, wParam, lParam);
+    return DefWindowProc(tb_input_C, message, wParam, lParam);
+}
+
+LRESULT CALLBACK Table_InputIDD_UI(HWND tb_input_D, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    PAINTSTRUCT ps;
+    HDC hdc;
+    RECT rect, rect1 = { 100, 140, 100, 26 };
+    TCHAR DBNAME[10], PROMPT[100];
+
+    int flag = 0;
+    static HWND CONF, INPUT1, TEXT1, TEXT2, BACK;
+    static HFONT hFont;                                             //  定义：逻辑字体
+
+
+    switch (message)
+    {
+
+    case WM_CREATE:
+
+        hFont = CreateFont(-14/*高*/, -7/*宽*/, 0, 0, 400 /*一般这个值设为400*/,
+            FALSE/*斜体?*/, FALSE/*下划线?*/, FALSE/*删除线?*/, DEFAULT_CHARSET,
+            OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY,
+            FF_DONTCARE, TEXT("微软雅黑"));
+
+        //创建静态文本框控件--库名
+        TEXT1 = CreateWindow(TEXT("static"), TEXT("库 名："),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ | SS_RIGHT /*水平居右*/,
+            10 /*x坐标*/, 80 /*y坐标*/, 70 /*宽度*/, 26 /*高度*/,
+            tb_input_D /*父窗口句柄*/, (HMENU)1 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        );
+
+        TEXT2 = CreateWindow(TEXT("static"), TEXT("名称字数限制：10"),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ /*水平居右*/,
+            100 /*x坐标*/, 140 /*y坐标*/, 120 /*宽度*/, 26 /*高度*/,
+            tb_input_D /*父窗口句柄*/, (HMENU)5 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        );
+
+        //创建单行文本框控件
+        INPUT1 = CreateWindow(TEXT("edit"), TEXT(""),
+            WS_CHILD | WS_VISIBLE | WS_BORDER /*边框*/ | ES_AUTOHSCROLL /*水平滚动*/,
+            100, 80, 200, 26,
+            tb_input_D, (HMENU)2, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //创建按钮控件--确定
+        CONF = CreateWindow(TEXT("button"), TEXT("确定"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            350, 80, 100, 30,
+            tb_input_D, (HMENU)3, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //创建按钮控件--返回上一级
+        BACK = CreateWindow(TEXT("button"), TEXT("返回上一级"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            350, 140, 100, 30,
+            tb_input_D, (HMENU)4, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //依次设置控件的字体
+        SendMessage(TEXT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(TEXT2, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(INPUT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(BACK, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(CONF, WM_SETFONT, (WPARAM)hFont, NULL);
+        //break;
+
+    case WM_PAINT:
+
+        hdc = BeginPaint(tb_input_D, &ps);
+        SelectObject(hdc, hFont);               //  设置显示字体
+        GetClientRect(tb_input_D, &rect);
+        DrawText(hdc, TEXT("BAMS 代码管理系统 Version 2.0  数据库删除\n\n[请输入数据库名称]"), -1, &rect, DT_LEFT | DT_CENTER);        //  绘制登录界面标题
+
+        EndPaint(tb_input_D, &ps);
+        return 0;
+
+    case WM_COMMAND:
+
+        if ((HWND)lParam == CONF)
+        {
+            GetWindowText(INPUT1, DBNAME, 10);
+            if (DT_Database_Delete(DBNAME) == 1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 删除成功！"), DBNAME);
+                MessageBox(tb_input_D, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+                ShowWindow(tb_input_D, SW_HIDE);
+                UpdateWindow(tb_input_D);
+            }
+            else if (DT_Database_Delete(DBNAME) == -1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 不存在！"), DBNAME);
+                MessageBox(tb_input_D, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+                ShowWindow(tb_input_D, SW_HIDE);
+                UpdateWindow(tb_input_D);
+            }
+        }
+
+        if ((HWND)lParam == BACK)
+        {
+            ShowWindow(tb_input_D, SW_HIDE);
+            UpdateWindow(tb_input_D);
+        }
+
+        return 0;
+
+    case WM_DESTROY:
+
+        DeleteObject(hFont);
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    return DefWindowProc(tb_input_D, message, wParam, lParam);
+}
+
+LRESULT CALLBACK Table_InputIDO_UI(HWND tb_input_O, UINT message, WPARAM wParam, LPARAM lParam)
+{
+
+    PAINTSTRUCT ps;
+    HDC hdc;
+    RECT rect, rect1 = { 100, 140, 100, 26 };
+    TCHAR DBNAME[10], PROMPT[100];
+
+    int flag = 0;
+    static HWND CONF, INPUT1, TEXT1, TEXT2, BACK;
+    static HFONT hFont;                                             //  定义：逻辑字体
+
+
+    switch (message)
+    {
+
+    case WM_CREATE:
+
+        hFont = CreateFont(-14/*高*/, -7/*宽*/, 0, 0, 400 /*一般这个值设为400*/,
+            FALSE/*斜体?*/, FALSE/*下划线?*/, FALSE/*删除线?*/, DEFAULT_CHARSET,
+            OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY,
+            FF_DONTCARE, TEXT("微软雅黑"));
+
+        //创建静态文本框控件--库名
+        TEXT1 = CreateWindow(TEXT("static"), TEXT("库 名："),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ | SS_RIGHT /*水平居右*/,
+            10 /*x坐标*/, 80 /*y坐标*/, 70 /*宽度*/, 26 /*高度*/,
+            tb_input_O /*父窗口句柄*/, (HMENU)1 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        );
+
+        TEXT2 = CreateWindow(TEXT("static"), TEXT("名称字数限制：10"),
+            WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE /*垂直居中*/ /*水平居右*/,
+            100 /*x坐标*/, 140 /*y坐标*/, 120 /*宽度*/, 26 /*高度*/,
+            tb_input_O /*父窗口句柄*/, (HMENU)5 /*控件ID*/, ((LPCREATESTRUCT)lParam)->hInstance /*当前程序实例句柄*/, NULL
+        );
+
+        //创建单行文本框控件
+        INPUT1 = CreateWindow(TEXT("edit"), TEXT(""),
+            WS_CHILD | WS_VISIBLE | WS_BORDER /*边框*/ | ES_AUTOHSCROLL /*水平滚动*/,
+            100, 80, 200, 26,
+            tb_input_O, (HMENU)2, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //创建按钮控件--确定
+        CONF = CreateWindow(TEXT("button"), TEXT("确定"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            350, 80, 100, 30,
+            tb_input_O, (HMENU)3, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //创建按钮控件--返回上一级
+        BACK = CreateWindow(TEXT("button"), TEXT("返回上一级"),
+            WS_CHILD | WS_VISIBLE | WS_BORDER | BS_FLAT/*扁平样式*/,
+            350, 140, 100, 30,
+            tb_input_O, (HMENU)4, ((LPCREATESTRUCT)lParam)->hInstance, NULL
+        );
+
+        //依次设置控件的字体
+        SendMessage(TEXT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(TEXT2, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(INPUT1, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(BACK, WM_SETFONT, (WPARAM)hFont, NULL);
+        SendMessage(CONF, WM_SETFONT, (WPARAM)hFont, NULL);
+        //break;
+
+    case WM_PAINT:
+
+        hdc = BeginPaint(tb_input_O, &ps);
+        SelectObject(hdc, hFont);               //  设置显示字体
+        GetClientRect(tb_input_O, &rect);
+        DrawText(hdc, TEXT("BAMS 代码管理系统 Version 2.0  数据库调用\n\n[请输入数据库名称]"), -1, &rect, DT_LEFT | DT_CENTER);        //  绘制登录界面标题
+
+        EndPaint(tb_input_O, &ps);
+        return 0;
+
+    case WM_COMMAND:
+
+        if ((HWND)lParam == CONF)
+        {
+            GetWindowText(INPUT1, DB_NAME, 10);
+            if (DT_Database_Open(DB_NAME) == 1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 调用成功！"), DB_NAME);
+                MessageBox(tb_input_O, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+
+                //  关闭此前的界面
+                ShowWindow(db_menu, SW_HIDE);
+                UpdateWindow(db_menu);
+                ShowWindow(db_input_O, SW_HIDE);
+                UpdateWindow(db_input_O);
+
+                ShowWindow(tb_menu, SW_SHOW);                   //  打开数据表菜单界面
+                UpdateWindow(tb_menu);
+            }
+            if (DT_Database_Open(DB_NAME) == -1)
+            {
+                wsprintf(PROMPT, TEXT("BAMS Version 2.0 系统提示：\r\n数据库：%s 错误或不存在！"), DB_NAME);
+                MessageBox(db_input_O, PROMPT, TEXT("信息提示"), MB_ICONINFORMATION);
+
+                ShowWindow(db_input_O, SW_HIDE);
+                UpdateWindow(db_input_O);
+            }
+        }
+
+        if ((HWND)lParam == BACK)
+        {
+            ShowWindow(tb_input_O, SW_HIDE);
+            UpdateWindow(tb_input_O);
+        }
+
+        return 0;
+
+    case WM_DESTROY:
+
+        DeleteObject(hFont);
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    return DefWindowProc(tb_input_O, message, wParam, lParam);
+
 }

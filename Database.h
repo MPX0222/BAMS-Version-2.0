@@ -33,7 +33,7 @@ int DT_Login(char* username, char* password);
 //代码数据库界面
 int DT_Database_Func();
 //代码数据表界面
-int DT_Table_Func(char* db_name);
+int DT_Table_Func(TCHAR* db_name);
 //创建数据库
 int DT_Database_Create(TCHAR* db_name);
 //删除数据库
@@ -67,81 +67,6 @@ int DT_Login(char* username, char* password)
 		return -2;
 }
 
-
-int DT_Table_Func(char* db_url)
-{
-	int flag = 0, func = 0, count = 0;
-	char db_name[13] = { 0 }, SID[10], haven[16], file_haven[45]; char* p;
-	char setting[45];
-	errno_t err, err1;
-	BTree T;
-
-	BTree_CreateTree(&T, 3);
-	err = fopen_s(&fp, db_url, "r");  //不需要重复写这句话，因为err在条件时已经被赋值，如果写下这句话，会显示文件被占用从而使err的值发生改变【已修复】
-	fseek(fp, 0L, SEEK_SET);
-
-	while (fgets(haven, 16, fp) != NULL)  //读取数据库文件中的文件名，在内存中生成B树
-	{
-		strcpy_s(SID, strlen(haven) + 1, haven);  //分离尾缀
-		int key = atoi(SID);
-		BTree_Insert(&T, key);
-	}
-	fclose(fp);
-
-	printf("-----------------------------------\n");
-	strcpy_s(db_name, strlen(strtok_s(db_url, ".txt", &p)) + 1, strtok_s(db_url, ".txt", &p));
-	printf("%s\n", db_name);
-	
-	//独立注册表设置
-	strcpy_s(setting, strlen(db_name) + 1, db_name);
-	strcat_s(setting, strlen(setting) + strlen("程序注册表.txt") + 1, "程序注册表.txt");
-
-	if ((err = fopen_s(&fp5, setting, "r")) == 0) {
-		printf("-----------------------------------\n");
-		printf("----< 代码数据文件注册表 >----\n");
-		printf("-----------------------------------\n");
-		while (fgets(file_haven, 45, fp5) != NULL) {
-			printf("%s", file_haven);
-			count++;
-		}
-		fclose(fp5);
-	}
-	printf("-----------------------------------\n");
-	printf("该库内总代码数据文件数：%d\n", count);
-
-	printf("-----------------------------------\n");
-	printf("1.创建代码数据文件\n2.删除代码数据文件\n3.查找代码数据文件\n4.添加代码【暂不支持】\n5.删除代码【暂不支持】\n6.修改代码【暂不支持】\n7.退出程序\n");
-	printf("请输入需要使用的功能：");
-	scanf_s("%d", &func);
-
-	switch (func)
-	{
-	case 1: while (DT_Table_Create(db_url, &T, T.root, setting)); break;  //CASE_1：创建代码数据文件
-	case 2: while (DT_Table_Delete(db_url, &T, T.root, setting)); break;  //CASE_2：删除代码数据文件
-	case 3: while (DT_Data_Select(db_url, &T, T.root)); break;  //CASE_3：查询代码数据文件
-	case 4: break;  //CASE_4：添加数据【暂不支持】
-	case 5: break;  //CASE_5：删除数据【暂不支持】
-	case 6: //CASE_6：修改数据【暂不支持】
-	case 7: exit(0); break;  //CASE_7：退出程序
-	}
-
-	system("cls");
-	strcat_s(db_name, strlen(db_name) + strlen(".txt") + 1, ".txt");
-	err1 = fopen_s(&fp4, "db_temp.txt", "w");  //更新数据库文件内容
-	BTree_Traverse(&T, T.root, 0);
-	remove(db_name);
-	fclose(fp4);
-	rename("db_temp.txt", db_name);
-
-	printf("-----------------------------------\n");
-	printf("1.继续使用\n2.退出程序\n");
-	printf("-----------------------------------\n");
-	printf("请输入您的选择：");
-	scanf_s("%d", &flag);
-	if (flag == 1) return 0;  //CASE_1：继续使用
-	if (flag == 2) exit(0);  //CASE_3：退出程序
-	return 0;
-}
 
 int DT_Database_Create(TCHAR* db_name)
 {
